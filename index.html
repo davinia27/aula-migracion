@@ -1,553 +1,200 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expediente Maestro - Davinia Palenzuela</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=Inter:wght@400;600;700;900&family=JetBrains+Mono:wght@500;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <style>
-        :root {
-            --sw: 1280px;
-            --sh: 720px;
-            --indigo-aisa: #4f46e5;
-            --neon-cyan: #22d3ee;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aula Migración PRO</title>
 
-        /* NITIDEZ EXTREMA PARA PROYECTOR */
-        * { 
-            box-sizing: border-box; 
-            margin: 0; padding: 0; 
-            -webkit-font-smoothing: antialiased; 
-            text-rendering: geometricPrecision;
-            image-rendering: -webkit-optimize-contrast;
-        }
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
-        body { 
-            background-color: #0f172a; 
-            display: flex; justify-content: center; align-items: center; 
-            height: 100vh; overflow: hidden; 
-            font-family: 'Plus Jakarta Sans', sans-serif;
-        }
+<style>
+body{margin:0;background:#0f172a;font-family:sans-serif}
+.screen{display:none;padding:20px;color:black;background:white;height:100vh}
+.screen.active{display:block}
 
-        #viewport {
-            width: var(--sw); height: var(--sh);
-            display: flex; align-items: center; justify-content: center;
-            transform-origin: center center;
-            position: relative;
-        }
+.footer{
+position:absolute;
+bottom:10px;
+left:20px;
+display:flex;
+gap:20px
+}
+.footer img{height:35px}
 
-        .white-board {
-            width: var(--sw); height: var(--sh);
-            background-color: #ffffff; border: 6px solid #000;
-            position: relative; overflow: hidden;
-            display: flex; flex-direction: column;
-            padding: 30px 60px;
-        }
+button{padding:10px 20px;background:black;color:white;border-radius:10px}
+input,textarea,select{width:100%;padding:10px;margin:5px 0}
 
-        .screen { display: none; width: 100%; height: 100%; flex-direction: column; }
-        .screen.active { display: flex; animation: none; }
+/* CARTAS */
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.card{
+border:3px solid black;
+border-radius:15px;
+padding:10px;
+cursor:pointer;
+background:#f1f5f9;
+transition:.2s
+}
+.card:hover{background:#e0e7ff}
+.selected{background:#4f46e5;color:white}
 
-        .title { 
-            font-size: 38px; font-weight: 900; color: #000; 
-            margin-bottom: 25px; border-left: 15px solid var(--indigo-aisa); 
-            padding-left: 20px; line-height: 1; text-transform: uppercase;
-        }
-
-        /* BOLA MÁGICA 3D */
-        #magicBallUI {
-            width: 280px; height: 280px;
-            background: radial-gradient(circle at 35% 35%, #6366f1, #312e81, #000);
-            border: 10px solid #fff; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 0 80px rgba(79, 70, 229, 0.4), inset -10px -10px 40px rgba(0,0,0,0.8);
-            margin: auto; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        #magicBallUI.pulse { transform: scale(1.1); box-shadow: 0 0 120px rgba(79, 70, 229, 0.7); }
-        #ballText { color: white; text-align: center; font-weight: 900; text-transform: uppercase; font-size: 1.5rem; line-height: 1.1; padding: 20px; }
-
-        /* RULETA Y PUNTERO CORREGIDO */
-        .wheel-wrapper { position: relative; width: 420px; height: 420px; margin: auto; }
-        #wheel-pointer {
-            position: absolute; top: -35px; left: 50%; transform: translateX(-50%);
-            width: 0; height: 0; border-left: 30px solid transparent; border-right: 30px solid transparent;
-            border-top: 55px solid #ff0000; z-index: 100; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.4));
-        }
-        #wheel { width: 100%; height: 100%; border-radius: 50%; border: 10px solid #000; background: #fff; transition: transform 6s cubic-bezier(0.1, 0, 0.1, 1); }
-
-        /* TECLADO DE NAVE ESPACIAL */
-        #terminalOverlay {
-            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.96);
-            backdrop-filter: blur(20px); z-index: 5000;
-            display: none; align-items: center; justify-content: center;
-        }
-        .terminal-box {
-            width: 500px; background: #000; border: 4px solid #334155;
-            border-radius: 2rem; padding: 40px; text-align: center;
-            box-shadow: 0 0 100px rgba(34, 211, 238, 0.2);
-            position: relative; overflow: hidden;
-        }
-        .display-screen {
-            background: #0f172a; border: 2px solid #1e293b; border-radius: 1rem;
-            padding: 20px; margin-bottom: 30px; min-height: 80px;
-            display: flex; align-items: center; justify-content: center;
-            font-family: 'JetBrains Mono', monospace; color: var(--neon-cyan);
-            font-size: 2.5rem; letter-spacing: 0.5rem;
-        }
-        .key-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
-        .key-btn {
-            background: #1e293b; color: #f8fafc; font-family: 'JetBrains Mono', monospace;
-            font-size: 1.5rem; font-weight: 800; padding: 20px; border-radius: 1rem;
-            border: 2px solid #334155; cursor: pointer;
-        }
-        .key-btn:active { background: var(--neon-cyan); color: #000; }
-        .key-btn.action { background: var(--indigo-aisa); color: #fff; }
-
-        /* FLASHCARDS */
-        .fc-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; overflow-y: auto; padding: 5px; flex-grow: 1; }
-        .fc-card { height: 105px; perspective: 1000px; cursor: pointer; }
-        .fc-inner { position: relative; width: 100%; height: 100%; transition: transform 0.4s; transform-style: preserve-3d; }
-        .fc-card.flipped .fc-inner { transform: rotateY(180deg); }
-        .fc-front, .fc-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; padding: 8px; border-radius: 1rem; border: 3px solid #000; text-align: center; }
-        .fc-front { font-weight: 900; font-size: 0.7rem; text-transform: uppercase; color: #000; background: #f1f5f9; }
-        .fc-back { background: #000; color: #fff; transform: rotateY(180deg); font-size: 0.55rem; font-weight: 600; line-height: 1.2; }
-
-        /* EVALUACIÓN - TABLA CORREGIDA */
-        .eval-table-container { display: flex; gap: 15px; width: 100%; height: 100%; justify-content: space-between; }
-        .eval-col { flex: 1; display: flex; flex-direction: column; background: #e0f2fe; border-radius: 20px; padding: 10px; border: 3px solid #000; }
-        .eval-header { padding: 15px; border-radius: 15px; text-align: center; color: #000; font-weight: 900; margin-bottom: 15px; min-height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 3px solid #000; }
-        .eval-row { background: #d1d5db; border: 3px solid #000; border-radius: 12px; margin-bottom: 8px; padding: 12px; text-align: center; font-weight: 800; color: #4b5563; }
-        .eval-label { font-size: 10px; text-transform: uppercase; color: #000; font-weight: 900; margin-bottom: 2px; }
-
-        /* NAVEGACIÓN */
-        .btn-aisa { background: #000; color: #fff; font-weight: 900; padding: 12px 25px; border-radius: 10px; text-transform: uppercase; cursor: pointer; border: none; }
-        .card { border: 3px solid #000; padding: 15px; border-radius: 20px; margin: 5px; font-weight: 700; background: #f8fafc; }
-        .nav-zone { position: absolute; bottom: 30px; right: 60px; display: flex; gap: 15px; z-index: 1000; }
-        .btn-nav { background: #000; color: white; width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; font-size: 24px; }
-        .persistent-footer { position: absolute; bottom: 30px; left: 60px; display: flex; gap: 30px; }
-        .persistent-footer img { height: 40px; }
-
-        .pin-card { background: #f8fafc; border: 4px solid #000; border-radius: 1.5rem; padding: 25px; text-align: center; cursor: pointer; transition: 0.2s; font-weight: 900; font-size: 24px; }
-        
-        input, textarea { border: 4px solid #000 !important; font-weight: 800 !important; border-radius: 15px !important; padding: 10px !important; }
-
-        @media print { .no-print { display: none; } }
-    </style>
+/* BOLA */
+#ball{
+width:200px;height:200px;border-radius:50%;
+background:radial-gradient(#6366f1,#000);
+display:flex;align-items:center;justify-content:center;
+color:white;font-size:20px;margin:auto
+}
+</style>
 </head>
+
 <body>
 
-<!-- TERMINAL DE ACCESO -->
-<div id="terminalOverlay" class="no-print">
-    <div class="terminal-box">
-        <h3 class="text-white font-black uppercase text-sm tracking-[0.4em] mb-4">Security Credentials Required</h3>
-        <p id="terminalTarget" class="text-slate-500 font-bold mb-6 italic">Unlocking Despacho G1...</p>
-        <div id="terminalDisplay" class="display-screen"></div>
-        <div class="key-grid">
-            <button class="key-btn" onclick="tapKey('G')">G</button>
-            <button class="key-btn" onclick="tapKey('1')">1</button>
-            <button class="key-btn" onclick="tapKey('2')">2</button>
-            <button class="key-btn" onclick="tapKey('3')">3</button>
-            <button class="key-btn" onclick="tapKey('4')">4</button>
-            <button class="key-btn" onclick="tapKey('5')">5</button>
-            <button class="key-btn" onclick="tapKey('A')">A</button>
-            <button class="key-btn" onclick="tapKey('I')">I</button>
-            <button class="key-btn" onclick="tapKey('S')">S</button>
-            <button class="key-btn action bg-red-600" onclick="resetKey()">RESET</button>
-            <button class="key-btn" onclick="tapKey('0')">0</button>
-            <button class="key-btn action" onclick="validateKey()">ENTER</button>
-        </div>
-        <button onclick="closeTerminal()" class="mt-8 text-slate-500 font-black uppercase text-xs">Abort Mission</button>
-    </div>
+<!-- PORTADA -->
+<div id="v1" class="screen active">
+<h1>Curso Migración</h1>
+<button onclick="go('v2')">Empezar</button>
 </div>
 
-<div id="viewport">
-    <div class="white-board">
-        <div class="persistent-footer no-print">
-            <img src="image_4dd04a.png" alt="Inst">
-            <img src="image_4dd34b.png" alt="AISA">
-        </div>
+<!-- BOLA -->
+<div id="v2" class="screen">
+<h2>Bola Mágica</h2>
 
-        <!-- 1. PORTADA -->
-        <div id="v1" class="screen active">
-            <div class="flex-grow flex flex-col items-center justify-center text-center">
-                <span class="text-indigo-600 font-black uppercase text-sm mb-2 italic">AISA Centro de Formación</span>
-                <h1 class="font-black text-black text-[70px] leading-none mb-8 italic uppercase tracking-tighter">Migración Real<br>& Tramitación</h1>
-                <div class="h-2 w-32 bg-indigo-600 rounded-full mb-6"></div>
-                <p class="text-3xl font-black text-slate-500 italic">Davinia Palenzuela | Tenerife 2026</p>
-            </div>
-            <div class="nav-zone"><button class="btn-nav" onclick="go('v2')"><i class="fa-solid fa-arrow-right"></i></button></div>
-        </div>
+<input id="name" placeholder="Nombre">
+<input id="obj" placeholder="Objeto">
+<input id="qual" placeholder="Cualidades">
 
-        <!-- 2. CRONOGRAMA -->
-        <div id="v2" class="screen">
-            <h2 class="title">Cronograma del Módulo</h2>
-            <div class="flex-grow grid grid-cols-2 gap-6">
-                <div class="card border-indigo-600 p-8 cursor-pointer" onclick="go('v3')">
-                    <p class="font-black text-indigo-600 uppercase text-xs mb-1">Paso 1: Normas</p>
-                    <p class="text-2xl font-black italic uppercase text-black">Asistencia (10%)</p>
-                </div>
-                <div class="card border-emerald-600 p-8 cursor-pointer" onclick="go('v4')">
-                    <p class="font-black text-emerald-600 uppercase text-xs mb-1">Paso 2: Notas</p>
-                    <p class="text-2xl font-black italic uppercase text-black">Evaluación Teórico-Práctica</p>
-                </div>
-                <div class="card border-blue-600 p-8 cursor-pointer" onclick="go('v5')">
-                    <p class="font-black text-blue-600 uppercase text-xs mb-1">Paso 3: Equipos</p>
-                    <p class="text-2xl font-black italic uppercase text-black">La Bola Mágica</p>
-                </div>
-                <div class="card border-amber-600 p-8 cursor-pointer" onclick="go('v8')">
-                    <p class="font-black text-amber-600 uppercase text-xs mb-1">Paso 4: Taller</p>
-                    <p class="text-2xl font-black italic uppercase text-black">Acceso Despachos</p>
-                </div>
-            </div>
-            <div class="nav-zone"><button class="btn-nav" onclick="go('v1')"><i class="fa-solid fa-arrow-left"></i></button><button class="btn-nav" onclick="go('v3')"><i class="fa-solid fa-arrow-right"></i></button></div>
-        </div>
+<button onclick="add()">Añadir</button>
+<button onclick="groups()">Crear grupos</button>
 
-        <!-- 3. ASISTENCIA -->
-        <div id="v3" class="screen">
-            <h2 class="title">Control de Asistencia</h2>
-            <div class="grid grid-cols-2 gap-10 items-center h-full">
-                <div class="p-12 bg-slate-50 border-8 border-black rounded-[4rem] text-center shadow-xl">
-                    <div class="text-[170px] font-black text-indigo-600 leading-none">10%</div>
-                    <p class="text-4xl font-black uppercase text-black">Límite de Faltas</p>
-                </div>
-                <div class="p-10 border-4 border-amber-300 rounded-[3rem] bg-amber-50 text-center">
-                    <p class="text-3xl font-black text-black italic">"Firma obligatoria al inicio y al final de cada sesión. Es requisito para el diploma."</p>
-                </div>
-            </div>
-            <div class="nav-zone"><button class="btn-nav" onclick="go('v2')"><i class="fa-solid fa-arrow-left"></i></button><button class="btn-nav" onclick="go('v4')"><i class="fa-solid fa-arrow-right"></i></button></div>
-        </div>
+<div id="ball">🔮</div>
+<div id="table"></div>
 
-        <!-- 4. CALIFICACIÓN (TABLA CORREGIDA) -->
-        <div id="v4" class="screen">
-            <h2 class="title">Sistema de Evaluación</h2>
-            <div class="flex-grow">
-                <div class="eval-table-container">
-                    <!-- Opción Múltiple -->
-                    <div class="eval-col">
-                        <div class="eval-header bg-yellow-400">
-                            <i class="fa-solid fa-list-ul text-3xl mb-2"></i>
-                            <p class="uppercase italic">Opción Múltiple</p>
-                        </div>
-                        <div class="eval-row"><p class="eval-label">Puntos Máximos</p>5</div>
-                        <div class="eval-row"><p class="eval-label">Nº Preguntas</p>20</div>
-                        <div class="eval-row"><p class="eval-label">Valor Puntos</p>0.25</div>
-                    </div>
-                    <!-- Rellenar Espacio (AJUSTE SOLICITADO) -->
-                    <div class="eval-col">
-                        <div class="eval-header bg-orange-400">
-                            <i class="fa-solid fa-square-pen text-3xl mb-2"></i>
-                            <p class="uppercase italic">Rellenar el Espacio</p>
-                        </div>
-                        <div class="eval-row"><p class="eval-label">Puntos Máximos</p>2</div>
-                        <div class="eval-row"><p class="eval-label">Nº Preguntas</p>4</div>
-                        <div class="eval-row"><p class="eval-label">Valor Puntos</p>0.5</div>
-                    </div>
-                    <!-- Relacionar -->
-                    <div class="eval-col">
-                        <div class="eval-header bg-red-400">
-                            <i class="fa-solid fa-shuffle text-3xl mb-2"></i>
-                            <p class="uppercase italic">Relacionar</p>
-                        </div>
-                        <div class="eval-row"><p class="eval-label">Puntos Máximos</p>1</div>
-                        <div class="eval-row"><p class="eval-label">Nº Preguntas</p>1</div>
-                        <div class="eval-row"><p class="eval-label">Valor Puntos</p>1</div>
-                    </div>
-                    <!-- Verdadero/Falso -->
-                    <div class="eval-col">
-                        <div class="eval-header bg-pink-400">
-                            <i class="fa-solid fa-circle-check text-3xl mb-2"></i>
-                            <p class="uppercase italic">Verdadero/Falso</p>
-                        </div>
-                        <div class="eval-row"><p class="eval-label">Puntos Máximos</p>2</div>
-                        <div class="eval-row"><p class="eval-label">Nº Preguntas</p>8</div>
-                        <div class="eval-row"><p class="eval-label">Valor Puntos</p>0.25</div>
-                    </div>
-                </div>
-            </div>
-            <div class="nav-zone"><button class="btn-nav" onclick="go('v3')"><i class="fa-solid fa-arrow-left"></i></button><button class="btn-nav" onclick="go('v5')"><i class="fa-solid fa-arrow-right"></i></button></div>
-        </div>
+<button onclick="go('v3')">Siguiente</button>
+</div>
 
-        <!-- 5. BOLA MÁGICA -->
-        <div id="v5" class="screen">
-            <h2 class="title">La Bola Mágica de Equipos</h2>
-            <div class="flex-grow grid grid-cols-2 gap-10 overflow-hidden">
-                <div class="bg-slate-50 p-8 border-4 border-black rounded-[3rem] space-y-4">
-                    <input id="name" placeholder="Nombre Alumno/a" class="w-full">
-                    <input id="obj" placeholder="Objeto Representativo" class="w-full">
-                    <input id="qual" placeholder="3 cualidades..." class="w-full">
-                    <div class="flex gap-4">
-                        <button class="btn-aisa flex-grow" onclick="addPerson()">Lanzar a la Bola</button>
-                        <button class="btn-aisa bg-indigo-600" onclick="makeGroups()">Crear Grupos</button>
-                    </div>
-                    <div id="feedback" class="mt-4 text-sm font-bold text-indigo-600 italic"></div>
-                </div>
-                <div class="flex flex-col items-center justify-center">
-                    <div id="magicBallUI"><div id="ballText">🔮<br>BOLA MÁGICA</div></div>
-                    <div id="groupsTable" class="mt-8 w-full bg-white border-4 border-black rounded-[2rem] p-4 max-h-[160px] overflow-y-auto"></div>
-                </div>
-            </div>
-            <div class="nav-zone"><button class="btn-nav" onclick="go('v4')"><i class="fa-solid fa-arrow-left"></i></button><button class="btn-nav" onclick="go('v6')"><i class="fa-solid fa-arrow-right"></i></button></div>
-        </div>
+<!-- RULETA -->
+<div id="v3" class="screen">
+<h2>Ruleta</h2>
+<canvas id="wheel" width="300" height="300"></canvas>
+<button onclick="spin()">Girar</button>
+<div id="result"></div>
+<button onclick="go('v4')">Siguiente</button>
+</div>
 
-        <!-- 6. RULETA CORREGIDA (SINCRONÍA TOTAL) -->
-        <div id="v6" class="screen">
-            <h2 class="title">Sorteo de Países (Unidades)</h2>
-            <div class="flex-grow grid grid-cols-[420px_1fr] gap-10 items-center">
-                <div class="flex flex-col items-center">
-                    <div class="wheel-wrapper">
-                        <div id="wheel-pointer"></div>
-                        <canvas id="wheel" width="1000" height="1000"></canvas>
-                    </div>
-                    <button id="spinBtn" class="btn-aisa w-full mt-6 text-xl bg-red-600" onclick="spin()">Girar Ruleta</button>
-                </div>
-                <div class="h-full flex flex-col">
-                    <p class="font-black text-xs text-slate-400 uppercase tracking-widest mb-4 text-center">Tabla de Asignación Oficial</p>
-                    <div id="resultTable" class="bg-slate-50 border-4 border-black rounded-[3rem] p-8 flex-grow space-y-2 overflow-y-auto"></div>
-                </div>
-            </div>
-            <div class="nav-zone"><button class="btn-nav" onclick="go('v5')"><i class="fa-solid fa-arrow-left"></i></button><button class="btn-nav" onclick="go('v7')"><i class="fa-solid fa-arrow-right"></i></button></div>
-        </div>
+<!-- PIN -->
+<div id="v4" class="screen">
+<h2>Acceso grupos</h2>
+<button onclick="login(1)">G1</button>
+<button onclick="login(2)">G2</button>
+<button onclick="login(3)">G3</button>
+<button onclick="login(4)">G4</button>
+<button onclick="login(5)">G5</button>
+</div>
 
-        <!-- 7. 20 HISTORIAS (EXACTAMENTE 20) -->
-        <div id="v7" class="screen">
-            <h2 class="title">20 Historias: Conceptos Base</h2>
-            <div id="fcGrid" class="fc-grid"></div>
-            <div class="nav-zone"><button class="btn-nav" onclick="go('v6')"><i class="fa-solid fa-arrow-left"></i></button><button class="btn-nav" onclick="go('v8')"><i class="fa-solid fa-arrow-right"></i></button></div>
-        </div>
+<!-- FICHA MODO JUEGO -->
+<div id="v5" class="screen">
+<h2>Ficha del personaje (modo juego)</h2>
 
-        <!-- 8. PANEL DE ACCESO -->
-        <div id="v8" class="screen">
-            <h2 class="title">Acceso a Despachos Virtuales</h2>
-            <div class="flex-grow grid grid-cols-5 gap-6 items-center">
-                <div id="btnGroup1" class="pin-card" onclick="openTerminal(1)">📂 G1<p class="text-xs mt-2 uppercase text-slate-400">Locked</p></div>
-                <div id="btnGroup2" class="pin-card" onclick="openTerminal(2)">📂 G2<p class="text-xs mt-2 uppercase text-slate-400">Locked</p></div>
-                <div id="btnGroup3" class="pin-card" onclick="openTerminal(3)">📂 G3<p class="text-xs mt-2 uppercase text-slate-400">Locked</p></div>
-                <div id="btnGroup4" class="pin-card" onclick="openTerminal(4)">📂 G4<p class="text-xs mt-2 uppercase text-slate-400">Locked</p></div>
-                <div id="btnGroup5" class="pin-card" onclick="openTerminal(5)">📂 G5<p class="text-xs mt-2 uppercase text-slate-400">Locked</p></div>
-            </div>
-            <div class="nav-zone"><button class="btn-nav" onclick="go('v7')"><i class="fa-solid fa-arrow-left"></i></button></div>
-        </div>
+<div class="cards">
 
-        <!-- 9. TALLER PRIVADO (FLUJO A V10) -->
-        <div id="v9" class="screen">
-            <div class="flex justify-between items-end mb-4">
-                <h2 class="title mb-0 uppercase tracking-tighter">Despacho G<span id="gnum"></span>: Expediente</h2>
-                <button onclick="go('v10')" class="btn-aisa bg-indigo-600 text-sm py-2 px-8">Finalizar y Continuar 🚀</button>
-            </div>
-            <div class="bg-white border-8 border-black rounded-[2.5rem] p-10 flex-grow overflow-y-auto">
-                <div class="grid grid-cols-2 gap-10">
-                    <div class="space-y-6">
-                        <div><label class="text-[10px] font-black uppercase text-slate-400">Nombre del Avatar</label><input id="f_name" placeholder="Nombre completo" class="w-full"></div>
-                        <div><label class="text-[10px] font-black uppercase text-slate-400">Edad del Sujeto</label><input id="f_age" placeholder="00 años" class="w-full"></div>
-                        <div><label class="text-[10px] font-black uppercase text-slate-400">Nacionalidad Sorteada</label><input id="f_country" readonly class="w-full bg-slate-50"></div>
-                    </div>
-                    <div class="space-y-6">
-                        <div><label class="text-[10px] font-black uppercase text-slate-400">Historia Migratoria</label><textarea id="f_history" rows="6" placeholder="Relato detallado del caso..." class="w-full"></textarea></div>
-                        <button onclick="window.print()" class="w-full btn-aisa bg-black text-xl">💾 Generar Informe PDF</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+<div class="card" onclick="select(this,'llegada','avion')">✈️ Avión</div>
+<div class="card" onclick="select(this,'llegada','patera')">🛶 Patera</div>
+<div class="card" onclick="select(this,'llegada','visado')">📄 Visado</div>
 
-        <!-- 10. RESUMEN Y TIPS -->
-        <div id="v10" class="screen">
-            <h2 class="title">Resumen Estratégico y Tips</h2>
-            <div class="flex-grow grid grid-cols-3 gap-6">
-                <div class="bg-black text-white p-8 rounded-[2.5rem] shadow-xl">
-                    <h3 class="text-2xl font-black uppercase text-indigo-400 mb-6 italic">📌 Carriles Clave</h3>
-                    <ul class="space-y-6 font-bold text-xl italic">
-                        <li class="border-b border-slate-700 pb-2">⚠️ Asilo: Hoja Blanca (Resguardo)</li>
-                        <li class="border-b border-slate-700 pb-2">⚠️ Régimen General: Arraigo</li>
-                        <li class="border-b border-slate-700 pb-2">⚠️ Estancia: No es residencia</li>
-                    </ul>
-                </div>
-                <div class="bg-red-50 p-8 border-4 border-red-300 rounded-[2.5rem] shadow-xl">
-                    <h3 class="text-2xl font-black text-red-600 mb-6 italic">⚖️ Antecedentes</h3>
-                    <p class="text-lg font-black italic uppercase leading-relaxed text-red-800">
-                        Policiales: Se limpian en Comisaría.<br><br>
-                        Penales: Sentencia firme. Si existen: DENEGACIÓN automática por la Oficina.
-                    </p>
-                </div>
-                <div class="bg-emerald-50 p-8 border-4 border-emerald-300 rounded-[2.5rem] shadow-xl">
-                    <h3 class="text-2xl font-black text-emerald-600 mb-6 italic">💎 Claves NIE/TIE</h3>
-                    <p class="text-lg font-black italic uppercase leading-relaxed text-emerald-800">
-                        NIE: El número fijo.<br><br>
-                        TIE: El plástico físico.<br><br>
-                        Padrón: 90 días de validez para trámites.
-                    </p>
-                </div>
-            </div>
-            <div class="nav-zone"><button class="btn-nav" onclick="go('v8')"><i class="fa-solid fa-arrow-left"></i></button><button class="btn-nav" onclick="go('v1')"><i class="fa-solid fa-house"></i></button></div>
-        </div>
+<div class="card" onclick="select(this,'objetivo','trabajo')">💼 Trabajo</div>
+<div class="card" onclick="select(this,'objetivo','estudios')">🎓 Estudios</div>
+<div class="card" onclick="select(this,'objetivo','proteccion')">🛡️ Protección</div>
 
-    </div>
+<div class="card" onclick="select(this,'situacion','asilo')">📄 Asilo</div>
+<div class="card" onclick="select(this,'situacion','irregular')">⚠️ Irregular</div>
+<div class="card" onclick="select(this,'situacion','erasmus')">🌍 Erasmus</div>
+
+</div>
+
+<textarea placeholder="Historia del personaje"></textarea>
+
+<button onclick="alert('Expediente creado')">Finalizar</button>
+</div>
+
+<!-- FOOTER LOGOS -->
+<div class="footer">
+<img src="logo1.png">
+<img src="logo2.png">
 </div>
 
 <script>
-    let people = [];
-    let groups = [[],[],[],[],[]];
-    let pins = ["G1AISA","G2AISA","G3AISA","G4AISA","G5AISA"];
-    let countries = [
-        {name:"COLOMBIA", color:"#1d4ed8"},
-        {name:"VENEZUELA", color:"#ea580c"},
-        {name:"CUBA", color:"#db2777"},
-        {name:"SENEGAL", color:"#000000"},
-        {name:"CANADÁ", color:"#7c3aed"}
-    ];
-    let assignedCountries = [null,null,null,null,null];
-    let rotation = 0;
-    let isSpinning = false;
-    let terminalActiveGroup = null;
-    let terminalInput = "";
 
-    function go(id){
-        document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-        const target = document.getElementById(id);
-        if(target) target.classList.add("active");
-        if(id === 'v6') drawWheel();
-        if(id === 'v7') renderStories();
-    }
+let people=[]
+let groupsData=[[],[],[],[],[]]
+let pins=["G1AISA","G2AISA","G3AISA","G4AISA","G5AISA"]
 
-    function addPerson() {
-        let n = document.getElementById('name').value;
-        let o = document.getElementById('obj').value;
-        let q = document.getElementById('qual').value;
-        if(!n || !o || !q) return;
-        people.push({n, o, q});
-        const ball = document.getElementById('magicBallUI');
-        ball.classList.add('pulse');
-        document.getElementById('ballText').innerHTML = `✨<br>${n.toUpperCase()}`;
-        document.getElementById('feedback').innerText = `✨ ${n}, aportas ${q} al grupo.`;
-        setTimeout(() => ball.classList.remove('pulse'), 400);
-        document.getElementById('name').value = "";
-        document.getElementById('obj').value = "";
-        document.getElementById('qual').value = "";
-    }
+function go(v){
+document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"))
+document.getElementById(v).classList.add("active")
+}
 
-    function makeGroups() {
-        groups = [[],[],[],[],[]];
-        people.forEach((p, i) => groups[i % 5].push(p));
-        renderGroups();
-        confetti();
-    }
+/* BOLA */
+function add(){
+let n=name.value
+if(!n)return
+people.push(n)
+ball.innerHTML=n
+}
 
-    function renderGroups() {
-        let html = "";
-        groups.forEach((g, i) => {
-            g.forEach(p => { html += `<div class="text-[10px] font-bold p-2 border-b">👤 ${p.n} → Unidad G${i+1}</div>`; });
-        });
-        document.getElementById('groupsTable').innerHTML = html;
-    }
+/* GRUPOS */
+function groups(){
+groupsData=[[],[],[],[],[]]
+people.forEach((p,i)=>groupsData[i%5].push(p))
 
-    /* RULETA: SINCRONIZACIÓN CORREGIDA */
-    function drawWheel() {
-        const c = document.getElementById('wheel'), ctx = c.getContext("2d");
-        const center = 500; ctx.clearRect(0,0,1000,1000);
-        const segment = (2 * Math.PI) / countries.length;
-        countries.forEach((coun, i) => {
-            let start = i * segment;
-            let end = (i + 1) * segment;
-            ctx.beginPath(); ctx.moveTo(center, center); ctx.arc(center, center, 480, start, end);
-            ctx.fillStyle = coun.color; ctx.fill();
-            ctx.save(); ctx.translate(center, center); ctx.rotate(start + segment/2);
-            ctx.fillStyle = "white"; ctx.font = "bold 45px Inter"; ctx.textAlign = "right";
-            ctx.fillText(coun.name, 450, 15); ctx.restore();
-        });
-    }
+let html=""
+groupsData.forEach((g,i)=>{
+g.forEach(p=>html+=`<div>${p} → G${i+1}</div>`)
+})
+table.innerHTML=html
+}
 
-    function spin() {
-        if(isSpinning) return;
-        let available = countries.map((c,i)=>i).filter(i=>!assignedCountries.includes(i));
-        if(available.length === 0) return;
-        isSpinning = true;
-        let target = available[Math.floor(Math.random() * available.length)];
-        const segmentDeg = 360 / countries.length;
-        const targetCenterDeg = (target * segmentDeg) + (segmentDeg / 2);
-        const angleToMove = (270 - targetCenterDeg);
-        rotation = rotation + (360 * 5) + (angleToMove - (rotation % 360));
-        document.getElementById('wheel').style.transform = `rotate(${rotation}deg)`;
-        setTimeout(() => {
-            let gIdx = assignedCountries.findIndex(x => x === null);
-            if(gIdx !== -1) { assignedCountries[gIdx] = target; renderTable(); confetti(); }
-            isSpinning = false;
-        }, 6000);
-    }
+/* RULETA */
+let colors=["#1d4ed8","#ea580c","#db2777","#0f172a","#7c3aed"]
+let countries=["Colombia","Venezuela","Cuba","Senegal","Canadá"]
 
-    function renderTable() {
-        let html = "";
-        assignedCountries.forEach((cIdx, i) => {
-            if(cIdx !== null) {
-                html += `
-                <div class="flex items-center justify-between p-4 bg-white border-2 border-black rounded-xl">
-                    <span class="font-black text-slate-400">UNIDAD G${i+1}</span>
-                    <span class="px-6 py-2 rounded-xl text-white font-black italic" style="background:${countries[cIdx].color}">${countries[cIdx].name}</span>
-                </div>`;
-            } else {
-                html += `<div class="p-4 bg-slate-50 border-2 border-dashed border-slate-300 rounded-xl opacity-50">UNIDAD G${i+1}: PENDIENTE</div>`;
-            }
-        });
-        document.getElementById('resultTable').innerHTML = html;
-    }
+function draw(){
+let c=wheel.getContext("2d")
+let a=2*Math.PI/countries.length
+countries.forEach((p,i)=>{
+c.beginPath()
+c.moveTo(150,150)
+c.arc(150,150,140,i*a,(i+1)*a)
+c.fillStyle=colors[i]
+c.fill()
+})
+}
+draw()
 
-    /* TERMINAL */
-    function openTerminal(g) {
-        terminalActiveGroup = g; terminalInput = "";
-        document.getElementById('terminalDisplay').innerText = "";
-        document.getElementById('terminalOverlay').style.display = "flex";
-    }
-    function closeTerminal() { document.getElementById('terminalOverlay').style.display = "none"; }
-    function tapKey(k) { if(terminalInput.length < 10) { terminalInput += k; document.getElementById('terminalDisplay').innerText = terminalInput.replace(/./g, "•"); } }
-    function resetKey() { terminalInput = ""; document.getElementById('terminalDisplay').innerText = ""; }
-    function validateKey() {
-        const display = document.getElementById('terminalDisplay');
-        if(terminalInput.trim().toUpperCase() === pins[terminalActiveGroup - 1]) {
-            display.innerText = "ACCESS GRANTED"; display.style.color = "#4ade80";
-            confetti({ colors: ['#4ade80'] });
-            setTimeout(() => {
-                document.getElementById('gnum').innerText = terminalActiveGroup;
-                const cIdx = assignedCountries[terminalActiveGroup - 1];
-                document.getElementById('f_country').value = cIdx !== null ? countries[cIdx].name : "¡SORTEA PAÍS!";
-                closeTerminal(); go("v9");
-            }, 1000);
-        } else {
-            display.innerText = "ACCESS DENIED"; display.style.color = "#ef4444";
-            setTimeout(() => { resetKey(); display.style.color = ""; }, 1000);
-        }
-    }
+function spin(){
+let r=Math.floor(Math.random()*countries.length)
+result.innerHTML=countries[r]
+confetti()
+}
 
-    /* 20 HISTORIAS: CONCEPTOS BASE */
-    const stories = [
-        { t: "Nacionalidad", s: "Ana nació en Colombia.", r: "👉 País de origen." },
-        { t: "Residencia", s: "Pedro vive legalmente.", r: "👉 Estancia legal." },
-        { t: "Estancia", s: "Lucía estudia 6 meses.", r: "👉 Tiempo limitado." },
-        { t: "NIE", s: "Ahmed tiene su número ID.", r: "👉 El número fijo." },
-        { t: "TIE", s: "María tiene su carné.", r: "👉 El plástico." },
-        { t: "Padrón", s: "Juan declara domicilio.", r: "👉 Dónde vives." },
-        { t: "Pasaporte", s: "Sofía lo usa para viajar.", r: "👉 ID internacional." },
-        { t: "Visado", s: "Carlos pidió permiso.", r: "👉 Permiso previo." },
-        { t: "Arraigo", s: "Mamadou lleva años aquí.", r: "👉 Integración." },
-        { t: "Arraigo Social", s: "Fatou tras 3 años aquí.", r: "👉 Vía social." },
-        { t: "Arraigo Laboral", s: "Luis tras trabajar 6 meses.", r: "👉 Vía laboral." },
-        { t: "Arraigo Formación", s: "Sara estudia para regularizarse.", r: "👉 Vía formación." },
-        { t: "Contrato", s: "Diego tiene el papel del trabajo.", r: "👉 Empleo." },
-        { t: "Precontrato", s: "Promesa futura de empleo.", r: "👉 Promesa." },
-        { t: "Seg. Social", s: "Pablo está en el sistema médico.", r: "👉 Protección." },
-        { t: "Cotización", s: "Cada mes, Laura guarda para su futuro.", r: "👉 Aportación." },
-        { t: "Expediente", s: "Karim tiene su carpeta lista.", r: "👉 Tu historia." },
-        { t: "Resolución", s: "Elena recibió la carta oficial.", r: "👉 Respuesta final." },
-        { t: "Denegación", s: "A Omar le han dicho que su solicitud no ha sido aceptada.", r: "👉 Respuesta negativa." },
-        { t: "Recurso", s: "Omar pide revisión oficial.", r: "👉 Apelación." }
-    ];
+/* PIN */
+function login(g){
+let p=prompt("Introduce PIN")
+if(p===pins[g-1]) go("v5")
+else alert("Incorrecto")
+}
 
-    function renderStories() {
-        document.getElementById('fcGrid').innerHTML = stories.map(st => `<div class="fc-card" onclick="this.classList.toggle('flipped')"><div class="fc-inner"><div class="fc-front"><p>${st.t}</p></div><div class="fc-back"><p>${st.s}<br><b>${st.r}</b></p></div></div></div>`).join('');
-    }
+/* CARTAS */
+let state={}
+function select(el,type,val){
+document.querySelectorAll(".card").forEach(c=>{
+if(c.onclick.toString().includes(type)) c.classList.remove("selected")
+})
+el.classList.add("selected")
+state[type]=val
+}
 
-    window.onload = () => { renderStories(); };
 </script>
+
 </body>
 </html>
