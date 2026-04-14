@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AULA MIGRACIÓN - AISA</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;900&display=swap" rel="stylesheet">
+
+<style>
+body{
+    margin:0;
+    font-family:'Plus Jakarta Sans', sans-serif;
+    background:#0f172a;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
+/* PIZARRA */
+.container{
+    width:1200px;
+    height:680px;
+    background:white;
+    border:8px solid black;
+    border-radius:30px;
+    padding:50px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    box-shadow:0 30px 80px rgba(0,0,0,0.7);
+}
+
+/* TITULO */
+h1{
+    font-size:60px;
+    font-weight:900;
+    margin-bottom:20px;
+    text-align:center;
+}
+
+.subtitle{
+    font-size:20px;
+    font-weight:700;
+    color:#64748b;
+    margin-bottom:50px;
+}
+
+/* BOTONES */
+.grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:40px;
+    width:100%;
+}
+
+.card{
+    background:#f8fafc;
+    border:5px solid black;
+    border-radius:25px;
+    padding:40px;
+    text-align:center;
+    cursor:pointer;
+    transition:0.2s;
+}
+
+.card:hover{
+    transform:scale(1.05);
+    background:#4f46e5;
+    color:white;
+}
+
+/* TEXTO */
+.card h2{
+    font-size:30px;
+    font-weight:900;
+    margin-bottom:10px;
+}
+
+.card p{
+    font-weight:700;
+}
+
+/* FOOTER */
+.footer{
+    position:absolute;
+    bottom:20px;
+    left:40px;
+    font-weight:800;
+    color:#64748b;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>AULA MIGRACIÓN</h1>
+    <div class="subtitle">Simulación real de extranjería · AISA Formación</div>
+
+    <div class="grid">
+
+        <div class="card" onclick="go('bloque1.html')">
+            <h2>🔮 BLOQUE 1</h2>
+            <p>Ficha · Avatar · Inicio</p>
+        </div>
+
+        <div class="card" onclick="go('bloque2.html')">
+            <h2>📂 BLOQUE 2</h2>
+            <p>Expediente · Investigación</p>
+        </div>
+
+        <div class="card" onclick="go('bloque3.html')">
+            <h2>📊 BLOQUE 3</h2>
+            <p>Informe · Resolución</p>
+        </div>
+
+    </div>
+
+    <div class="footer">AISA · Davinia Palenzuela · 2026</div>
+
+</div>
+
+<script>
+function go(url){
+    window.location.href = url;
+}
+</script>
+
+</body>
+</html>
