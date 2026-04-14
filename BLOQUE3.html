@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bloque 3 - Formación AISA: IA y Expediente HD</title>
+    
+    <!-- RECURSOS EXTERNOS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        :root {
+            --indigo-aisa: #4f46e5;
+            --slate-aisa: #1e293b;
+            --pure-black: #000000;
+        }
+
+        /* RESET Y NITIDEZ */
+        * { 
+            box-sizing: border-box; 
+            margin: 0; padding: 0; 
+            -webkit-font-smoothing: antialiased; 
+            text-rendering: optimizeLegibility;
+        }
+
+        body { 
+            background-color: #0f172a; 
+            height: 100vh; width: 100vw; 
+            display: flex; justify-content: center; align-items: center; 
+            overflow: hidden; font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        #viewport {
+            width: 100vw; height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+            padding: 20px;
+        }
+
+        /* PIZARRA AJUSTADA 16:9 */
+        .white-board {
+            width: 1280px; height: 720px;
+            background-color: #ffffff; border: 6px solid var(--pure-black);
+            position: relative; display: flex; flex-direction: column;
+            padding: 35px 50px; border-radius: 2rem;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.7);
+            transform-origin: center center;
+            flex-shrink: 0;
+        }
+
+        .screen { display: none; width: 100%; height: 100%; flex-direction: column; position: relative; }
+        .screen.active { display: flex; animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        .title { 
+            font-size: 34px; font-weight: 800; color: var(--pure-black); 
+            margin-bottom: 25px; border-left: 15px solid var(--indigo-aisa); 
+            padding-left: 20px; line-height: 1; text-transform: uppercase;
+        }
+
+        /* NAVEGACIÓN REFINADA */
+        .nav-zone { position: absolute; bottom: 30px; left: 50px; display: flex; gap: 12px; z-index: 1000; }
+        .btn-nav { background: var(--pure-black); color: white; width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; font-size: 22px; transition: 0.2s; }
+        .btn-nav:hover { background: var(--indigo-aisa); transform: translateY(-3px); }
+
+        /* TIPOGRAFÍA Y FORMULARIOS */
+        input, textarea, select { 
+            border: 3px solid var(--pure-black) !important; 
+            border-radius: 0.8rem !important; 
+            padding: 12px 16px !important; 
+            font-weight: 600 !important;
+            font-family: 'Inter', sans-serif; 
+            font-size: 1.15rem !important;
+            outline: none; width: 100%;
+        }
+        input:focus { border-color: var(--indigo-aisa) !important; background: #f8fafc; }
+        input[readonly] { background-color: #f1f5f9; border-color: #cbd5e1 !important; color: #475569; }
+
+        .scroll-area { flex-grow: 1; overflow-y: auto; padding-right: 15px; padding-bottom: 120px; }
+        .scroll-area::-webkit-scrollbar { width: 10px; }
+        .scroll-area::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; border: 2px solid #fff; }
+
+        .dossier-section { border: 4px solid #000; border-radius: 1.5rem; padding: 25px; margin-bottom: 30px; background: #fff; position: relative; }
+        .dossier-badge { position: absolute; top: -15px; left: 25px; background: #000; color: #fff; padding: 4px 20px; border-radius: 10px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* REDISEÑO PEPITO GRILLO (MÁS PROFESIONAL) */
+        .grillo-wrapper { position: absolute; bottom: 35px; right: 45px; z-index: 2000; }
+        .grillo-float {
+            width: 100px; height: 130px; 
+            background: #1e293b;
+            border: 4px solid #000; border-radius: 1rem;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; box-shadow: 10px 10px 0px rgba(0,0,0,0.1);
+            transition: 0.3s;
+        }
+        .grillo-float:hover { transform: translateY(-5px); box-shadow: 10px 15px 0px rgba(0,0,0,0.15); }
+        .grillo-icon { font-size: 3rem; margin-bottom: 5px; filter: drop-shadow(2px 2px 0px #000); }
+        .grillo-tag { background: #4f46e5; color: white; width: 100%; text-align: center; font-size: 9px; font-weight: 800; padding: 4px 0; position: absolute; bottom: 0; text-transform: uppercase; border-top: 3px solid #000; }
+
+        .grillo-speech {
+            position: absolute; bottom: 150px; right: 0; width: 320px;
+            background: #fff; border: 4px solid #000; border-radius: 1.5rem;
+            padding: 25px; font-weight: 600; font-size: 1rem; line-height: 1.4;
+            box-shadow: 15px 15px 0px rgba(0,0,0,0.1); display: none;
+        }
+
+        .ai-btn { background: #4f46e5; color: white; border: 3px solid #000; padding: 10px 20px; border-radius: 12px; font-weight: 700; font-size: 0.9rem; cursor: pointer; text-transform: uppercase; transition: 0.2s; }
+        .ai-btn:hover { background: #000; }
+
+        #loadingOverlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.9); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; color: white; }
+    </style>
+</head>
+<body>
+
+<div id="viewport">
+    <div class="white-board">
+
+        <!-- ASESOR PEPITO GRILLO (NUEVA ESTÉTICA) -->
+        <div class="grillo-wrapper">
+            <div id="grilloBubble" class="grillo-speech">
+                <div class="flex items-center gap-4 mb-4 pb-4 border-b-2 border-slate-100">
+                    <span class="text-4xl">🦗</span>
+                    <div>
+                        <p class="font-bold text-indigo-600 uppercase text-[10px] leading-none mb-1">Mentoría Técnica</p>
+                        <p class="font-extrabold text-slate-900 text-lg uppercase italic">Pepito Grillo</p>
+                    </div>
+                </div>
+                <p id="grilloText">¿Has revisado si la oferta laboral tiene una duración mínima de un año? Vamos a verificarlo.</p>
+                <button onclick="aiGrilloAsk(event)" class="mt-6 bg-indigo-600 text-white px-6 py-4 rounded-xl text-xs uppercase w-full font-bold border-2 border-black">Hacer pregunta IA ✨</button>
+            </div>
+            <div class="grillo-float" onclick="toggleGrillo()">
+                <span class="grillo-icon">🦗</span>
+                <div class="grillo-tag">Mentor AISA</div>
+            </div>
+        </div>
+
+        <!-- CARGANDO -->
+        <div id="loadingOverlay">
+            <div class="text-center">
+                <i class="fa-solid fa-microchip fa-spin text-8xl mb-8 text-indigo-400"></i>
+                <p id="loadingText" class="text-4xl uppercase font-extrabold italic tracking-tighter">Analizando expediente...</p>
+            </div>
+        </div>
+
+        <!-- PANTALLA 1: PORTADA -->
+        <div id="s1" class="screen active">
+            <div class="flex-grow flex flex-col items-center justify-center text-center">
+                <span class="text-indigo-600 font-bold uppercase text-2xl mb-6 tracking-[0.5em]">Módulo Técnico AISA</span>
+                <h1 class="text-black text-8xl font-extrabold mb-10 italic uppercase tracking-tighter leading-[0.8]">Expediente Maestro<br>& Mentoría IA</h1>
+                <div class="h-3 w-72 bg-indigo-600 rounded-full mb-12"></div>
+                <div class="bg-black text-white px-12 py-6 rounded-[2.5rem] font-bold text-3xl italic uppercase shadow-xl border-4 border-indigo-600">Fase 3: Tramitación</div>
+            </div>
+            <div class="nav-zone"><button class="btn-nav" onclick="go('s2')"><i class="fa-solid fa-arrow-right"></i></button></div>
+        </div>
+
+        <!-- PANTALLA 2: EQUIPOS -->
+        <div id="s2" class="screen">
+            <h2 class="title">Selección de Equipo de Trabajo</h2>
+            <div class="flex-grow flex flex-col items-center justify-center">
+                <div class="p-12 bg-slate-50 border-4 border-dashed border-slate-300 rounded-[4rem] text-center w-full max-w-4xl">
+                    <p class="text-3xl font-extrabold uppercase italic mb-10 text-slate-400 tracking-widest">Elige tu Grupo</p>
+                    <div class="grid grid-cols-5 gap-6">
+                        <button onclick="selectGroup(1)" class="h-24 rounded-2xl bg-black text-white text-4xl font-extrabold hover:bg-indigo-600 transition-all border-4 border-white">1</button>
+                        <button onclick="selectGroup(2)" class="h-24 rounded-2xl bg-black text-white text-4xl font-extrabold hover:bg-indigo-600 transition-all border-4 border-white">2</button>
+                        <button onclick="selectGroup(3)" class="h-24 rounded-2xl bg-black text-white text-4xl font-extrabold hover:bg-indigo-600 transition-all border-4 border-white">3</button>
+                        <button onclick="selectGroup(4)" class="h-24 rounded-2xl bg-black text-white text-4xl font-extrabold hover:bg-indigo-600 transition-all border-4 border-white">4</button>
+                        <button onclick="selectGroup(5)" class="h-24 rounded-2xl bg-black text-white text-4xl font-extrabold hover:bg-indigo-600 transition-all border-4 border-white">5</button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-4 gap-6 mt-12 w-full max-w-5xl">
+                    <button onclick="go('s3')" class="border-3 border-black p-5 rounded-2xl font-bold uppercase bg-indigo-50 text-base">1. Ficha (T1)</button>
+                    <button onclick="go('s4')" class="border-3 border-black p-5 rounded-2xl font-bold uppercase bg-amber-50 text-base">2. Expediente (T2)</button>
+                    <button onclick="go('s_guia')" class="border-3 border-black p-5 rounded-2xl font-bold uppercase bg-cyan-50 text-base">Guía 📚</button>
+                    <button onclick="go('s5')" class="border-3 border-black p-5 rounded-2xl font-bold uppercase bg-green-50 text-base">3. Informe (T3)</button>
+                </div>
+            </div>
+            <div class="nav-zone"><button class="btn-nav" onclick="go('s1')"><i class="fa-solid fa-arrow-left"></i></button></div>
+        </div>
+
+        <!-- PANTALLA 3: TAREA 1 -->
+        <div id="s3" class="screen">
+            <h2 class="title">Tarea 1: Ficha del Protagonista</h2>
+            <div class="scroll-area bg-white p-12 border-4 border-black rounded-[3rem]">
+                <div class="grid grid-cols-2 gap-12">
+                    <div class="space-y-8">
+                        <input id="t1_name" placeholder="Nombre Completo" oninput="syncAll()">
+                        <div class="grid grid-cols-2 gap-6">
+                            <div>
+                                <p class="text-[12px] font-bold uppercase mb-2 text-slate-400">Fecha Nacimiento</p>
+                                <input id="t1_dob" type="date" onchange="calcAgeAndSync()">
+                            </div>
+                            <div class="pt-8">
+                                <input id="t1_age" placeholder="Edad" readonly class="text-indigo-600">
+                            </div>
+                        </div>
+                        <input id="t1_nationality" readonly class="italic text-indigo-700 bg-indigo-50">
+                        <input id="t1_arrival" placeholder="Fecha Llegada (DD/MM/AAAA)" oninput="syncAll()">
+                    </div>
+                    <div class="space-y-8">
+                        <div class="relative">
+                            <textarea id="t1_story" rows="4" placeholder="Relato migratorio..." oninput="syncAll()"></textarea>
+                            <button onclick="aiExpandStory()" class="ai-btn absolute top-[-20px] right-0 shadow-lg">Mejorar IA ✨</button>
+                        </div>
+                        <textarea id="t1_goal" rows="2" placeholder="Motivo del trámite..." oninput="syncAll()"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-zone"><button class="btn-nav" onclick="go('s2')"><i class="fa-solid fa-arrow-left"></i></button><button class="btn-nav" onclick="go('s4')"><i class="fa-solid fa-arrow-right"></i></button></div>
+        </div>
+
+        <!-- PANTALLA 4: EXPEDIENTE -->
+        <div id="s4" class="screen">
+            <h2 class="title">Tarea 2: Expediente Jurídico</h2>
+            <div class="scroll-area bg-white p-12 border-4 border-black rounded-[3rem]">
+                <div class="dossier-section border-indigo-600">
+                    <span class="dossier-badge" style="background:var(--indigo-aisa)">Estrategia de Vía Legal</span>
+                    <div class="grid grid-cols-2 gap-10">
+                        <div class="space-y-4">
+                            <input id="t2_name_auto" readonly class="bg-indigo-50">
+                            <select id="t2_legal_path" onchange="updateChecklist(); syncAll()">
+                                <option value="">-- Seleccionar Vía --</option>
+                                <option value="soc">Arraigo Social</option>
+                                <option value="lab">Arraigo Laboral</option>
+                                <option value="fam">Arraigo Familiar</option>
+                                <option value="asilo">Asilo</option>
+                            </select>
+                        </div>
+                        <textarea id="t2_context" rows="2" placeholder="Red de apoyo en España..." oninput="syncAll()"></textarea>
+                    </div>
+                </div>
+
+                <div class="dossier-section">
+                    <span class="dossier-badge">Checklist Documental</span>
+                    <div id="checkList" class="grid grid-cols-2 gap-4"></div>
+                </div>
+
+                <div class="dossier-section bg-slate-900 text-white border-white">
+                    <span class="dossier-badge" style="background:var(--indigo-aisa)">9. Resolución Final</span>
+                    <div class="flex items-center gap-12">
+                        <div class="flex gap-8">
+                            <label class="flex items-center gap-2 cursor-pointer font-bold"><input type="checkbox" name="res" value="ok" onchange="syncAll()" class="w-6 h-6"> APTO</label>
+                            <label class="flex items-center gap-2 cursor-pointer font-bold"><input type="checkbox" name="res" value="no" onchange="syncAll()" class="w-6 h-6"> NO APTO</label>
+                        </div>
+                        <input id="t2_final_why" placeholder="Justificación técnica..." oninput="syncAll()" class="!bg-slate-800 !text-white !border-slate-700">
+                    </div>
+                </div>
+            </div>
+            <div class="nav-zone"><button class="btn-nav" onclick="go('s2')"><i class="fa-solid fa-arrow-left"></i></button><button class="btn-nav" onclick="go('s5')"><i class="fa-solid fa-arrow-right"></i></button></div>
+        </div>
+
+        <!-- PANTALLA 5: INFORME -->
+        <div id="s5" class="screen">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="title mb-0">Informe Ejecutivo</h2>
+                <div class="flex gap-4">
+                    <button onclick="speakReport()" class="bg-indigo-600 text-white px-8 py-4 rounded-xl font-bold text-xs uppercase border-2 border-black">Oír Dictamen 🔊</button>
+                    <button onclick="exportTask('captureT3')" class="bg-black text-white px-10 py-4 rounded-xl font-bold text-xs uppercase border-2 border-indigo-600">Exportar 📸</button>
+                </div>
+            </div>
+            <div id="captureT3" class="scroll-area bg-white p-14 border-[10px] border-black rounded-[4rem]">
+                <div class="flex justify-between items-center border-b-8 border-black pb-8 mb-12">
+                    <div>
+                        <h3 class="text-6xl font-extrabold italic uppercase tracking-tighter">Dictamen Técnico</h3>
+                        <p class="text-indigo-600 font-bold text-sm uppercase tracking-widest">Equipo <span class="activeG">X</span> | <span id="sumName">---</span></p>
+                    </div>
+                    <p id="sumCountry" class="text-4xl font-extrabold italic text-slate-800">---</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-16">
+                    <div class="space-y-10">
+                        <div class="bg-slate-50 p-8 border-4 border-black rounded-[2.5rem]">
+                            <p class="font-extrabold text-sm uppercase mb-4">Motivo del Trámite</p>
+                            <p id="sumGoal" class="text-base font-medium italic">---</p>
+                        </div>
+                        <div id="sumLegal"></div>
+                    </div>
+                    <div class="space-y-10">
+                        <div id="sumAIBox" class="bg-black text-white p-10 rounded-[3rem] text-center border-4 border-indigo-600">
+                            <p class="text-xl font-extrabold italic uppercase text-indigo-400 mb-6">Dictamen Final</p>
+                            <p id="sumRes" class="text-5xl font-extrabold italic uppercase">EN ESTUDIO</p>
+                            <p id="sumAIResult" class="text-xs mt-8 opacity-70 italic leading-snug"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const apiKey = "";
+    const modelId = "gemini-2.5-flash-preview-09-2025";
+    let activeG = null;
+    const countries = ["COLOMBIA", "VENEZUELA", "CUBA", "SENEGAL", "CANADÁ"];
+    const store = { 1: { country: countries[0], fields: {} }, 2: { country: countries[1], fields: {} }, 3: { country: countries[2], fields: {} }, 4: { country: countries[3], fields: {} }, 5: { country: countries[4], fields: {} } };
+
+    function scaleApp(){
+        const baseW = 1280; const baseH = 720;
+        const scale = Math.min(window.innerWidth / (baseW + 100), window.innerHeight / (baseH + 100));
+        const board = document.querySelector(".white-board");
+        if(board) board.style.transform = `scale(${scale})`;
+    }
+    window.addEventListener("resize", scaleApp);
+
+    function go(id) {
+        document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+        const target = document.getElementById(id);
+        if (target) {
+            target.classList.add("active");
+            if(id === 's5') updateSummary();
+        }
+    }
+
+    function selectGroup(num) {
+        try {
+            activeG = num;
+            document.querySelectorAll('.activeG').forEach(el => el.innerText = num);
+            document.getElementById('t1_nationality').value = store[num].country;
+            loadData(num);
+            syncAll();
+            updateChecklist();
+            if(typeof confetti === "function") confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            setTimeout(() => go('s3'), 300);
+        } catch(e) { go('s3'); }
+    }
+
+    function toggleGrillo() {
+        const b = document.getElementById('grilloBubble');
+        b.style.display = b.style.display === 'block' ? 'none' : 'block';
+    }
+
+    async function callGemini(p) {
+        try {
+            const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: p }] }] })
+            });
+            const d = await r.json();
+            return d.candidates?.[0]?.content?.parts?.[0]?.text || "No disponible.";
+        } catch(e) { return "Error técnico."; }
+    }
+
+    async function aiGrilloAsk(e) {
+        e.stopPropagation();
+        const bText = document.getElementById('grilloText');
+        bText.innerText = "Revisando normativa...";
+        const ctx = { país: store[activeG]?.country, vía: document.getElementById('t2_legal_path').value };
+        const prompt = `Asesor jurídico. Caso: ${ctx.país}, Vía: ${ctx.vía}. Haz UNA pregunta socrática legal punzante de max 18 palabras.`;
+        bText.innerText = await callGemini(prompt);
+    }
+
+    async function aiExpandStory() {
+        setLoading(true, "Mejorando relato...");
+        const s = document.getElementById('t1_story').value;
+        const prompt = `Expande este relato migratorio de forma profesional (100 palabras): ${s}`;
+        document.getElementById('t1_story').value = await callGemini(prompt);
+        syncAll(); setLoading(false);
+    }
+
+    function calcAgeAndSync() {
+        const dob = document.getElementById('t1_dob').value;
+        if (!dob) return;
+        const b = new Date(dob); const t = new Date();
+        let age = t.getFullYear() - b.getFullYear();
+        if (t.getMonth() < b.getMonth() || (t.getMonth() === b.getMonth() && t.getDate() < b.getDate())) age--;
+        document.getElementById('t1_age').value = age + " años";
+        syncAll();
+    }
+
+    function syncAll() { 
+        if (activeG) { 
+            const name = document.getElementById('t1_name').value;
+            const age = document.getElementById('t1_age').value;
+            document.getElementById('t2_name_auto').value = `${name} (${age})`;
+            saveData(); 
+        } 
+    }
+
+    function saveData() { if (activeG) document.querySelectorAll('input[id], textarea[id], select[id]').forEach(f => store[activeG].fields[f.id] = f.value); }
+    function loadData(n) { 
+        const d = store[n].fields; 
+        document.querySelectorAll('input[id], textarea[id], select[id]').forEach(f => { 
+            if(d[f.id] !== undefined) f.value = d[f.id]; 
+            else if(!f.readOnly) f.value = ''; 
+        }); 
+    }
+
+    function updateChecklist() {
+        const cont = document.getElementById('checkList');
+        cont.innerHTML = "";
+        ['Pasaporte', 'Padrón', 'Penales', 'Informe Inserción'].forEach(n => {
+            cont.innerHTML += `<label class="flex items-center gap-3 font-bold text-sm"><input type="checkbox" class="w-5 h-5"> ${n}</label>`;
+        });
+    }
+
+    function updateSummary() {
+        document.getElementById('sumName').innerText = document.getElementById('t1_name').value || "---";
+        document.getElementById('sumCountry').innerText = activeG ? store[activeG].country : "---";
+        document.getElementById('sumGoal').innerText = document.getElementById('t1_goal').value || "---";
+        const resOk = document.querySelector('input[name="res"][value="ok"]')?.checked;
+        const resNo = document.querySelector('input[name="res"][value="no"]')?.checked;
+        document.getElementById('sumRes').innerText = resOk ? "VIABLE ✅" : (resNo ? "DENEGADO ❌" : "EN ESTUDIO");
+    }
+
+    function setLoading(s, t) { document.getElementById('loadingOverlay').style.display = s ? "flex" : "none"; document.getElementById('loadingText').innerText = t; }
+
+    async function exportTask(id) {
+        setLoading(true, "Exportando...");
+        try {
+            const canvas = await html2canvas(document.getElementById(id), { backgroundColor: "#ffffff", scale: 3 });
+            const link = document.createElement("a");
+            link.download = `INFORME_AISA_BLOQUE3.png`; link.href = canvas.toDataURL(); link.click();
+        } catch(e) {}
+        setLoading(false);
+    }
+
+    window.onload = () => { scaleApp(); go('s1'); };
+</script>
+
+</body>
+</html>

@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bloque 2 - Módulo 1: Dinámicas Inteligentes AISA</title>
+    
+    <!-- ANCLA: RECURSOS EXTERNOS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            --indigo-aisa: #4f46e5;
+            --neon-cyan: #22d3ee;
+            --status-green: #22c55e;
+            --status-red: #ef4444;
+            --pure-black: #000000;
+        }
+
+        /* ANCLA: BLINDAJE DE NITIDEZ Y ANTIALIASING */
+        * { 
+            box-sizing: border-box; 
+            margin: 0; padding: 0; 
+            -webkit-font-smoothing: none !important; 
+            text-rendering: geometricPrecision !important;
+            image-rendering: crisp-edges;
+        }
+
+        body { 
+            background-color: #0f172a; 
+            height: 100vh; width: 100vw; 
+            display: flex; justify-content: center; align-items: center; 
+            overflow: hidden; font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .white-board {
+            width: 96vw; height: 54vw; max-height: 96vh; max-width: 170vh; 
+            background-color: #ffffff; border: 8px solid var(--pure-black);
+            position: relative; display: flex; flex-direction: column;
+            padding: 2% 3%; border-radius: 2.5rem;
+            box-shadow: 0 40px 100px rgba(0,0,0,0.6); margin: auto;
+            overflow: hidden;
+        }
+
+        .screen { display: none; width: 100%; height: 100%; flex-direction: column; position: relative; overflow: hidden; }
+        .screen.active { display: flex; animation: fadeIn 0.2s linear; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .title { 
+            font-size: clamp(22px, 4.5vh, 48px); font-weight: 900; color: var(--pure-black); 
+            margin-bottom: 2vh; border-left: 18px solid var(--indigo-aisa); 
+            padding-left: 22px; line-height: 1; text-transform: uppercase;
+        }
+
+        .nav-zone { position: absolute; bottom: 25px; right: 35px; display: flex; gap: 12px; z-index: 1000; }
+        .btn-nav { background: var(--pure-black); color: white; width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; font-size: 22px; transition: 0.2s; }
+        .btn-nav:hover { background: var(--indigo-aisa); transform: scale(1.1); }
+
+        /* INPUTS BLINDADOS */
+        input { 
+            border: 6px solid var(--pure-black) !important; 
+            font-weight: 900 !important; 
+            border-radius: 1.2rem !important; 
+            padding: 12px !important; 
+            background: #fff !important; 
+            font-size: 1.1rem !important; 
+            color: var(--pure-black) !important;
+            outline: none !important;
+            transition: none !important;
+        }
+
+        /* GRUPOS */
+        .groups-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; flex-grow: 1; overflow-y: auto; padding: 10px; max-height: 65vh; }
+        .group-card { border: 6px solid var(--pure-black); border-radius: 1.8rem; background: #fff; padding: 15px; display: flex; flex-direction: column; box-shadow: 6px 6px 0px var(--pure-black); height: fit-content; min-height: 180px; }
+        .group-header { font-weight: 900; text-align: center; color: var(--indigo-aisa); border-bottom: 4px solid #000; padding-bottom: 8px; margin-bottom: 12px; text-transform: uppercase; font-size: 0.9rem; }
+        .student-item { background: #f8fafc; border: 3px solid #000; padding: 6px 10px; border-radius: 1rem; margin-bottom: 6px; font-weight: 900; font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; }
+
+        /* RULETA (GRANDE Y NÍTIDA) */
+        .wheel-container { flex: 1.2; display: flex; align-items: center; justify-content: center; position: relative; max-width: 550px; margin: auto; }
+        #wheel { width: 100%; height: auto; border-radius: 50%; border: 12px solid #000; will-change: transform; transition: transform 6s cubic-bezier(0.1, 0, 0, 1); }
+        #wheel-pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 30px solid transparent; border-right: 30px solid transparent; border-top: 60px solid #ff0000; z-index: 500; filter: drop-shadow(4px 4px 0px #000); }
+
+        /* CONCEPTOS */
+        .concept-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; flex-grow: 1; overflow-y: auto; padding: 10px; }
+        .concept-card { border: 7px solid var(--pure-black); border-radius: 1.8rem; background: #fff; padding: 25px; box-shadow: 10px 10px 0px var(--pure-black); }
+        .concept-option { border: 5px solid var(--pure-black); padding: 14px; margin-top: 12px; border-radius: 1.2rem; font-weight: 900; font-size: 1.15rem; cursor: pointer; text-align: left; background: #fff; }
+        .concept-option.correct { background: var(--status-green) !important; color: white; border-color: var(--pure-black); }
+        .concept-option.wrong { background: var(--status-red) !important; color: white; border-color: var(--pure-black); }
+        .feedback-box { margin-top: 15px; padding: 15px; border-radius: 1rem; background: #eff6ff; border: 4px solid var(--indigo-aisa); font-size: 1rem; font-weight: 900; display: none; color: #1e3a8a; }
+
+        .summary-card { background: #fff; border: 4px solid #000; border-radius: 1.5rem; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 6px 6px 0px #000; }
+        .summary-card p { font-weight: 900; text-transform: uppercase; }
+
+        #aisaPrintArea { display: none; }
+        @media print {
+            body * { display: none !important; }
+            #aisaPrintArea { display: block !important; width: 100%; padding: 40px; }
+            .print-card { border: 3px solid #000; padding: 20px; margin-bottom: 20px; border-radius: 15px; page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="aisaPrintArea">
+    <div style="border-bottom: 8px solid #4f46e5; padding-bottom: 20px; margin-bottom: 40px;">
+        <h1 style="font-weight: 900; font-size: 32px;">Glosario Técnico de Extranjería</h1>
+        <p style="font-weight: 800;">Sesión <span id="printSessionNum"></span> | Módulo 1</p>
+    </div>
+    <div id="printBody"></div>
+</div>
+
+<div class="white-board">
+
+    <!-- PANTALLA 1: CRONOGRAMA -->
+    <div id="s1" class="screen active">
+        <h2 class="title">Calendario del Módulo 1</h2>
+        <div class="flex-grow grid grid-cols-3 gap-10 items-center px-10">
+            <div class="bg-white border-[8px] border-black p-10 rounded-[3rem] shadow-xl text-center h-[70%] flex flex-col justify-center">
+                <p class="font-black text-indigo-600 italic">Sesión 1</p>
+                <p class="text-5xl font-black italic">07 ABRIL</p>
+            </div>
+            <div class="bg-indigo-50 border-[8px] border-indigo-600 p-10 rounded-[3rem] shadow-2xl text-center h-[85%] flex flex-col justify-center relative">
+                <div class="absolute -top-7 left-1/2 transform -translate-x-1/2 bg-indigo-600 text-white text-[11px] px-8 py-2 rounded-full font-black">DESTACADA</div>
+                <p class="font-black text-indigo-600 italic">Sesión 2</p>
+                <p class="text-5xl font-black italic">14 ABRIL</p>
+            </div>
+            <div class="bg-red-50 border-[8px] border-red-600 p-10 rounded-[3rem] shadow-xl text-center h-[70%] flex flex-col justify-center">
+                <p class="font-black text-red-600 italic">Sesión 3</p>
+                <p class="text-5xl font-black italic">21 ABRIL</p>
+            </div>
+        </div>
+        <div class="nav-zone"><button class="btn-nav" onclick="go('s2')"><i class="fa-solid fa-arrow-right"></i></button></div>
+    </div>
+
+    <!-- PANTALLA 2: RUTA MAESTRA (4 OPCIONES ANCLADAS) -->
+    <div id="s2" class="screen">
+        <h2 class="title">Ruta Maestra de Dinámicas</h2>
+        <div class="flex-grow flex flex-col justify-center px-16 pb-10">
+            <div class="grid grid-cols-2 gap-8">
+                <button onclick="go('s3')" class="bg-white border-[8px] border-black p-6 rounded-[2.5rem] flex items-center gap-10 shadow-xl hover:bg-slate-50 transition-all">
+                    <span class="w-16 h-16 bg-black text-white rounded-2xl flex items-center justify-center font-black text-4xl italic">1</span>
+                    <p class="text-3xl font-black italic uppercase">Bola Mágica</p>
+                </button>
+                <button onclick="go('s5')" class="bg-white border-[8px] border-black p-6 rounded-[2.5rem] flex items-center gap-10 shadow-xl hover:bg-slate-50 transition-all">
+                    <span class="w-16 h-16 bg-black text-white rounded-2xl flex items-center justify-center font-black text-4xl italic">2</span>
+                    <p class="text-3xl font-black italic uppercase">Identidad</p>
+                </button>
+                <button onclick="go('s6')" class="bg-white border-[8px] border-black p-6 rounded-[2.5rem] flex items-center gap-10 shadow-xl hover:bg-slate-50 transition-all">
+                    <span class="w-16 h-16 bg-black text-white rounded-2xl flex items-center justify-center font-black text-4xl italic">3</span>
+                    <p class="text-3xl font-black italic uppercase">Territorios</p>
+                </button>
+                <button onclick="go('s8')" class="bg-white border-[8px] border-black p-6 rounded-[2.5rem] flex items-center gap-10 shadow-xl hover:bg-slate-50 transition-all">
+                    <span class="w-16 h-16 bg-black text-white rounded-2xl flex items-center justify-center font-black text-4xl italic">4</span>
+                    <p class="text-3xl font-black italic uppercase">Glosario</p>
+                </button>
+            </div>
+        </div>
+        <div class="nav-zone"><button class="btn-nav" onclick="go('s1')"><i class="fa-solid fa-arrow-left"></i></button></div>
+    </div>
+
+    <!-- PANTALLA 3: INTRO BOLA -->
+    <div id="s3" class="screen">
+        <h2 class="title">Fase 1: La Bola Mágica</h2>
+        <div class="flex-grow flex gap-12 items-center px-12">
+            <div class="flex-1 bg-indigo-600 text-white border-8 border-black p-12 rounded-[4rem] h-[75%] flex flex-col justify-center shadow-2xl">
+                <h3 class="text-3xl font-black uppercase mb-4 text-neon-cyan italic tracking-tighter">Sinergia Técnica</h3>
+                <p class="text-2xl text-justify font-black leading-tight uppercase">Analizaremos vuestras cualidades y objetos personales para crear grupos equilibrados.</p>
+            </div>
+            <button class="bg-black text-white px-12 py-6 rounded-[2.5rem] font-black uppercase text-2xl shadow-xl hover:bg-indigo-700" onclick="go('s4')">Abrir Registro</button>
+        </div>
+        <div class="nav-zone"><button class="btn-nav" onclick="go('s2')"><i class="fa-solid fa-arrow-left"></i></button></div>
+    </div>
+
+    <!-- PANTALLA 4: REGISTRO (OBJETO EN SEGUNDA POSICIÓN) -->
+    <div id="s4" class="screen">
+        <h2 class="title">Registro de Talentos Maestría</h2>
+        <div class="flex-grow grid grid-cols-2 gap-12 px-10 items-center">
+            <div class="bg-slate-50 p-10 border-[8px] border-black rounded-[3.5rem] space-y-4 shadow-2xl h-[95%] flex flex-col justify-center">
+                <input id="inName" placeholder="Nombre Alumno/a" class="w-full">
+                <input id="inObj" placeholder="Objeto Representativo" class="w-full">
+                <input id="inQual" placeholder="Cualidad Principal" class="w-full">
+                <div class="flex gap-4">
+                    <button class="bg-black text-white flex-grow py-5 rounded-xl font-black uppercase text-xl" onclick="registrarAlumno()">Añadir ✨</button>
+                    <button class="bg-indigo-600 text-white px-10 rounded-xl font-black uppercase text-xl" onclick="go('s4_5')">Ver Grupos 👥</button>
+                </div>
+            </div>
+            <div class="flex flex-col items-center justify-center">
+                <div class="w-64 h-64 bg-indigo-900 rounded-full border-[15px] border-white flex items-center justify-center shadow-2xl mb-6 relative">
+                    <div id="ballUI" class="text-white text-center font-black text-4xl">🔮</div>
+                </div>
+                <div id="lastStudent" class="text-center font-black text-slate-400 italic text-3xl uppercase tracking-tighter">Esperando registros...</div>
+            </div>
+        </div>
+        <div class="nav-zone"><button class="btn-nav" onclick="go('s3')"><i class="fa-solid fa-arrow-left"></i></button></div>
+    </div>
+
+    <!-- PANTALLA 5: EQUIPOS -->
+    <div id="s4_5" class="screen">
+        <div class="flex justify-between items-center mb-6 px-4">
+            <h2 class="title mb-0">Composición de Grupos</h2>
+            <button onclick="confetti(); go('s2')" class="bg-black text-white px-10 py-3 rounded-2xl font-black uppercase text-sm">Validar Grupos ✅</button>
+        </div>
+        <div id="groupsContainer" class="groups-grid"></div>
+        <div class="nav-zone"><button class="btn-nav" onclick="go('s4')"><i class="fa-solid fa-arrow-left"></i></button></div>
+    </div>
+
+    <!-- PANTALLA 6: IDENTIDAD -->
+    <div id="s5" class="screen">
+        <h2 class="title">Identidad Corporativa</h2>
+        <div class="flex-grow flex flex-col justify-center items-center px-12 gap-10">
+            <div class="bg-indigo-600 text-white border-[10px] border-black p-14 rounded-[5rem] w-full shadow-2xl text-center">
+                <button onclick="generarIdentidadIA()" class="mb-12 bg-black text-white px-12 py-5 rounded-full font-black text-sm uppercase border-4 border-neon-cyan">Sugerir Marca con Gemini ✨</button>
+                <div class="grid grid-cols-2 gap-10 text-left">
+                    <div class="bg-white/10 p-10 rounded-[3.5rem] border-4 border-white/20 text-center">
+                        <p class="text-3xl font-black uppercase mb-4">Nombre</p>
+                        <p id="gName" class="text-xl font-black italic">Lex AISA Nova</p>
+                    </div>
+                    <div class="bg-white/10 p-10 rounded-[3.5rem] border-4 border-white/20 text-center">
+                        <p class="text-3xl font-black uppercase mb-4">Filosofía</p>
+                        <p id="gMotive" class="text-xl font-black italic">Valores de Despacho</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="nav-zone"><button class="btn-nav" onclick="go('s2')"><i class="fa-solid fa-arrow-left"></i></button></div>
+    </div>
+
+    <!-- PANTALLA 7: INTRO RULETA -->
+    <div id="s6" class="screen">
+        <h2 class="title">Fase 3: Destino Territorial</h2>
+        <div class="flex-grow flex gap-12 items-center px-12">
+            <div class="flex-1 bg-white border-[10px] border-black p-14 rounded-[5rem] shadow-2xl flex flex-col justify-center h-[80%]">
+                <h3 class="text-5xl font-black uppercase italic mb-10 text-indigo-600">Misión Internacional</h3>
+                <p class="text-3xl text-justify font-black text-slate-700 uppercase">Sortearemos vuestra jurisdicción para el caso práctico principal.</p>
+            </div>
+            <button class="bg-indigo-600 text-white px-14 py-7 rounded-[3rem] font-black uppercase text-3xl shadow-xl" onclick="go('s7')">Abrir Ruleta</button>
+        </div>
+        <div class="nav-zone"><button class="btn-nav" onclick="go('s2')"><i class="fa-solid fa-arrow-left"></i></button></div>
+    </div>
+
+    <!-- PANTALLA 8: RULETA (OPTIMIZADA) -->
+    <div id="s7" class="screen">
+        <h2 class="title">Sorteo Territorial AISA</h2>
+        <div class="flex-grow grid grid-cols-2 gap-10 items-center px-10 relative">
+            <div class="wheel-container">
+                <div id="wheel-pointer"></div>
+                <canvas id="wheel" width="1000" height="1000"></canvas>
+            </div>
+            <div class="flex flex-col h-full gap-5 py-5 justify-center">
+                <div id="spinStatus" class="bg-black text-white px-10 py-5 rounded-[2rem] text-center font-black uppercase text-xl tracking-tighter">Sorteando: GRUPO 1</div>
+                <button id="spinBtn" class="bg-red-600 text-white w-full h-20 rounded-[3rem] font-black text-4xl uppercase shadow-2xl" onclick="spinWheel()">Girar 🎯</button>
+                <div id="rTableMini" class="grid grid-cols-1 gap-2 overflow-y-auto"></div>
+            </div>
+        </div>
+        <div class="nav-zone"><button class="btn-nav" onclick="go('s6')"><i class="fa-solid fa-arrow-left"></i></button><button class="btn-nav" onclick="go('s7_5')"><i class="fa-solid fa-arrow-right"></i></button></div>
+    </div>
+
+    <!-- PANTALLA 9: RECUENTO TERRITORIAL -->
+    <div id="s7_5" class="screen">
+        <h2 class="title">Recuento de Misiones Territoriales</h2>
+        <div id="summaryResults" class="flex-grow px-12 pt-10 overflow-y-auto"></div>
+        <div class="nav-zone"><button class="btn-nav" onclick="go('s7')"><i class="fa-solid fa-arrow-left"></i></button><button class="btn-nav" onclick="go('s8')"><i class="fa-solid fa-arrow-right"></i></button></div>
+    </div>
+
+    <!-- PANTALLA 10: GLOSARIO SESIONES -->
+    <div id="s8" class="screen">
+        <h2 class="title">Glosario Técnico: Módulo 1</h2>
+        <div class="flex-grow flex flex-col justify-center px-24 gap-10">
+            <div class="bg-slate-50 border-[10px] border-black p-14 rounded-[6rem] shadow-2xl text-center flex justify-center gap-10">
+                <button onclick="setSession(1)" class="bg-black text-white px-10 py-6 rounded-3xl font-black uppercase text-xl">Sesión 1</button>
+                <button id="btnS2" onclick="setSession(2)" class="bg-indigo-600 text-white px-10 py-6 rounded-3xl font-black uppercase text-xl disabled:opacity-30" disabled>Sesión 2 🔒</button>
+                <button id="btnS3" onclick="setSession(3)" class="bg-red-600 text-white px-10 py-6 rounded-3xl font-black uppercase text-xl disabled:opacity-30" disabled>Sesión 3 🔒</button>
+            </div>
+        </div>
+        <div class="nav-zone"><button class="btn-nav" onclick="go('s2')"><i class="fa-solid fa-arrow-left"></i></button></div>
+    </div>
+
+    <!-- PANTALLA 11: CONCEPTOS (ORDEN PROTEGIDO) -->
+    <div id="s9" class="screen">
+        <div class="flex justify-between items-center mb-8 px-12">
+            <h2 id="sessionTitle" class="title mb-0">Sesión 1</h2>
+            <button onclick="downloadPDF()" class="bg-red-600 text-white px-10 py-4 rounded-2xl font-black text-sm uppercase shadow-lg border-4 border-black">Descargar PDF 💾</button>
+        </div>
+        <div id="conceptContainer" class="concept-grid px-12 pb-14"></div>
+        <div class="nav-zone"><button class="btn-nav" onclick="go('s8')"><i class="fa-solid fa-arrow-left"></i></button></div>
+    </div>
+
+</div>
+
+<script>
+    const apiKey = "";
+    const modelId = "gemini-2.5-flash-preview-09-2025";
+    let students = [];
+    let unlocked = [1];
+    let currentS = 1;
+    let solvedCount = 0;
+    let rot = 0;
+    let spinCount = 0;
+
+    const countries = [
+        {n:"COLOMBIA", c:"#1d4ed8"}, {n:"VENEZUELA", c:"#ea580c"}, 
+        {n:"CUBA", c:"#db2777"}, {n:"SENEGAL", c:"#000000"}, {n:"CANADÁ", c:"#10b981"}
+    ];
+    let assignedC = [null,null,null,null,null];
+
+    const sessionConcepts = {
+        1: [
+            { q: "¿Qué implica la 'Ley aplicada' en casos de doble nacionalidad?", opt: ["La del país de origen", "La de última residencia en España", "La que elija el interesado"], cor: 1, feed: "Rige la ley de la nacionalidad que coincida con la última residencia legal en España." },
+            { q: "¿Cuál es la definición legal de 'Situación de Estancia'?", opt: ["Residencia temporal", "Permanencia inferior a 90 días o por estudios", "Autorización de larga duración"], cor: 1, feed: "La estancia es la permanencia por tiempo no superior a 90 días o motivos específicos." },
+            { q: "Límite máximo de días para estancia de turista sin visado:", opt: ["30 días", "90 días naturales", "180 días"], cor: 1, feed: "El límite máximo de estancia turística es de 90 días naturales por cada periodo de 180." },
+            { q: "¿El NIE es por sí mismo un permiso de residencia?", opt: ["Sí, otorga derechos", "No, es solo identificación", "Solo en asilo"], cor: 1, feed: "El NIE es exclusivamente un número administrativo de identificación personal." }
+        ],
+        2: [
+            { q: "¿Plazo para solicitar la TIE tras entrar con visado?", opt: ["15 días", "1 mes desde la entrada", "3 meses"], cor: 1, feed: "La TIE debe solicitarse en el plazo de un mes desde la entrada efectiva." },
+            { q: "¿Qué es el 'Silencio Administrativo Positivo'?", opt: ["Denegación", "Concesión por falta de respuesta", "Prórroga"], cor: 1, feed: "Si la norma lo prevé, la falta de resolución implica la concesión tácita." },
+            { q: "Requisito base para solicitar el 'Arraigo Social':", opt: ["Tener familia", "3 años de permanencia y contrato", "Pasaporte"], cor: 1, feed: "Exige acreditar 3 años de permanencia continuada y un contrato de trabajo." },
+            { q: "Edad máxima para reagrupación de hijos:", opt: ["16 años", "Menores de 18 años", "21 años"], cor: 1, feed: "Se pueden reagrupar hijos menores de 18 años o con discapacidad." }
+        ],
+        3: [
+            { q: "¿En qué consiste la 'Protección Subsidiaria'?", opt: ["Asilo", "Protección por riesgo real de daño grave", "Humanitaria"], cor: 1, feed: "Se otorga a quienes enfrentan riesgos de muerte o tortura sin ser refugiados." },
+            { q: "¿Plazo de interposición para un Recurso de Alzada?", opt: ["15 días", "1 mes", "2 meses"], cor: 1, feed: "El recurso de alzada tiene un plazo legal de interposición de un mes." },
+            { q: "¿Qué permiso habilita para trabajar por cuenta propia y ajena?", opt: ["Arraigo", "Autorización de Compatibilidad", "Visado"], cor: 1, feed: "La autorización específica de compatibilidad permite ambas modalidades." },
+            { q: "¿Es obligatorio el examen CCSE para todos?", opt: ["Sí", "No, solo para Nacionalidad", "Opcional"], cor: 1, feed: "La prueba CCSE es un requisito específico para la obtención de la nacionalidad." }
+        ]
+    };
+
+    function go(id) {
+        document.querySelectorAll(".screen").forEach(s => { s.classList.remove("active"); s.style.display = "none"; });
+        const target = document.getElementById(id);
+        if (target) {
+            target.style.display = "flex";
+            void target.offsetWidth; 
+            target.classList.add("active");
+            if(id === 's4_5') renderGroups();
+            if(id === 's7') setTimeout(drawWheel, 100);
+            if(id === 's7_5') renderRecuento();
+            if(id === 's9') renderConcepts();
+        }
+    }
+
+    async function registrarAlumno() {
+        const n = document.getElementById('inName').value;
+        const q = document.getElementById('inQual').value;
+        const o = document.getElementById('inObj').value;
+        if (!n || !q || !o) return;
+        let groupNum = (students.length % 5) + 1;
+        students.push({n, q, o, g: groupNum});
+        document.getElementById('lastStudent').innerText = `${n.toUpperCase()} → GRUPO ${groupNum}`;
+        document.getElementById('inName').value = ""; document.getElementById('inQual').value = ""; document.getElementById('inObj').value = "";
+    }
+
+    function renderGroups() {
+        const cont = document.getElementById('groupsContainer'); cont.innerHTML = "";
+        for(let i=1; i<=5; i++) {
+            const list = students.filter(s => s.g === i).map(s => `<div class="student-item">👤 ${s.n}</div>`).join("");
+            cont.innerHTML += `<div class="group-card"><div class="group-header">GRUPO ${i}</div><div class="overflow-y-auto">${list || "<p class='text-[9px] italic text-slate-300'>Vacío</p>"}</div></div>`;
+        }
+    }
+
+    function drawWheel() {
+        const c = document.getElementById('wheel'); const ctx = c.getContext("2d");
+        const ratio = window.devicePixelRatio || 2;
+        c.width = 1000 * ratio; c.height = 1000 * ratio; ctx.scale(ratio, ratio);
+        const center = 500; const slice = (2 * Math.PI) / countries.length;
+        countries.forEach((p, i) => {
+            ctx.beginPath(); ctx.moveTo(center, center); ctx.arc(center, center, 480, i*slice, (i+1)*slice);
+            ctx.fillStyle = p.c; ctx.fill(); ctx.lineWidth = 12; ctx.strokeStyle = "#000"; ctx.stroke();
+            ctx.save(); ctx.translate(center, center); ctx.rotate(i*slice + slice/2);
+            ctx.fillStyle = "white"; ctx.font = "900 65px Plus Jakarta Sans"; ctx.textAlign = "right";
+            ctx.fillText(p.n, 460, 20); ctx.restore();
+        });
+    }
+
+    function spinWheel() {
+        if (spinCount >= 5) return;
+        const spinBtn = document.getElementById('spinBtn');
+        spinBtn.disabled = true;
+        let avail = countries.map((_, i) => i).filter(idx => !assignedC.includes(idx));
+        let targetIdx = avail[Math.floor(Math.random() * avail.length)];
+        const seg = 360 / countries.length; 
+        rot += 360 * 10 + (270 - (targetIdx * seg + seg/2)) - (rot % 360);
+        document.getElementById('wheel').style.transform = `rotate(${rot}deg)`;
+        setTimeout(() => { 
+            assignedC[spinCount] = targetIdx; 
+            updateWheelMini(); 
+            confetti(); 
+            spinCount++;
+            if (spinCount < 5) {
+                document.getElementById('spinStatus').innerText = `Sorteando: GRUPO ${spinCount + 1}`;
+                spinBtn.disabled = false;
+            } else {
+                document.getElementById('spinStatus').innerText = "Sorteo Finalizado";
+            }
+        }, 6000);
+    }
+
+    function updateWheelMini() {
+        let h = "";
+        assignedC.forEach((idx, i) => { 
+            if (idx !== null) {
+                const color = countries[idx].c;
+                h += `<div class="text-white border-2 border-black p-2 rounded-lg font-black italic text-xs shadow-md" style="background-color: ${color}">GRUPO ${i+1}: ${countries[idx].n}</div>`; 
+            }
+        });
+        document.getElementById('rTableMini').innerHTML = h;
+    }
+
+    function renderRecuento() {
+        const cont = document.getElementById('summaryResults');
+        cont.innerHTML = assignedC.map((idx, i) => {
+            if (idx === null) return "";
+            const country = countries[idx].n;
+            const color = countries[idx].c;
+            const team = students.filter(s => s.g === i+1).map(s => s.n).join(", ");
+            return `<div class="summary-card" style="border-left: 15px solid ${color}"><div class="flex items-center gap-4"><span class="bg-black text-white px-4 py-2 rounded-xl font-black">GRUPO ${i+1}</span><p class="text-xl font-black">${country}</p></div><p class="text-xs italic opacity-60">${team || 'Sin integrantes'}</p></div>`;
+        }).join('');
+    }
+
+    async function generarIdentidadIA() {
+        try {
+            const prompt = `Genera un nombre de despacho legal y una filosofía breve para un grupo de expertos en extranjería. JSON: {"n":"", "f":""}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
+            const res = await fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
+            const data = await res.json();
+            const json = JSON.parse(data.candidates[0].content.parts[0].text.match(/\{.*\}/s)[0]);
+            document.getElementById('gName').innerText = json.n;
+            document.getElementById('gMotive').innerText = json.f;
+        } catch(e) {}
+    }
+
+    function setSession(s) {
+        currentS = s; solvedCount = 0;
+        document.getElementById('sessionTitle').innerText = "Sesión " + s;
+        go('s9');
+    }
+
+    function renderConcepts() {
+        const cont = document.getElementById('conceptContainer');
+        cont.innerHTML = sessionConcepts[currentS].map((d, i) => `
+            <div class="concept-card">
+                <p class="font-black text-indigo-600 text-[11px] mb-1">CONCEPTO ${i+1}</p>
+                <p class="text-[1.2rem] font-black uppercase mb-4 leading-tight">${d.q}</p>
+                ${d.opt.map((o, j) => `<div class="concept-option" onclick="checkC(this, ${i}, ${j})">${o}</div>`).join('')}
+                <div class="feedback-box" id="f-${i}">${d.feed}</div>
+            </div>
+        `).join('');
+    }
+
+    function checkC(el, cI, oI) {
+        const c = sessionConcepts[currentS][cI];
+        const opts = el.parentElement.querySelectorAll('.concept-option');
+        opts.forEach((o, i) => { o.onclick = null; if(i === c.cor) o.classList.add('correct'); else if(i === oI) o.classList.add('wrong'); });
+        document.getElementById(`f-${cI}`).style.display = "block";
+        solvedCount++;
+        if(solvedCount >= 4) {
+            if(currentS === 1 && !unlocked.includes(2)) unlocked.push(2);
+            if(currentS === 2 && !unlocked.includes(3)) unlocked.push(3);
+            updateLocks(); confetti();
+        }
+    }
+
+    function updateLocks() {
+        if(unlocked.includes(2)) { document.getElementById('btnS2').disabled = false; document.getElementById('btnS2').innerText = "Sesión 2 ✨"; }
+        if(unlocked.includes(3)) { document.getElementById('btnS3').disabled = false; document.getElementById('btnS3').innerText = "Sesión 3 ✨"; }
+    }
+
+    function downloadPDF() {
+        document.getElementById('printSessionNum').innerText = currentS;
+        let h = "";
+        sessionConcepts[currentS].forEach((c, i) => { h += `<div class="print-card"><h3>Concepto ${i+1}: ${c.q}</h3><p><b>Resolución:</b> ${c.feed}</p></div>`; });
+        document.getElementById('printBody').innerHTML = h;
+        window.print();
+    }
+    window.onload = () => { go('s1'); };
+</script>
+</body>
+</html>
